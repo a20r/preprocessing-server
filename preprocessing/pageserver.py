@@ -7,7 +7,7 @@ MIME_DICT = {
     "imgs": "image/png",
     "libraries": "text/javascript",
     "data": "text/csv",
-    "sounds":  "audio/vnd.wav"
+    "sounds": "audio/vnd.wav"
 }
 
 

@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Bowtie Mapping Example</title>
+    <title>Run Mapper</title>
 
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
@@ -32,10 +32,10 @@
     <!-- <script type="text/javascript" src="/client/js/bowtie.js"></script> -->
 
     <script type="text/javascript">
-        google.maps.event.addDomListener(window, 'load', function () {
-            $("#startModal").modal('show');
-        });
 
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
 
         function initialize() {
             var mapOptions = {
@@ -49,34 +49,55 @@
 
             var bounds = new google.maps.LatLngBounds();
 
-            $.getJSON("/gps/" + $("#session_key").val() + "/" + $("#exec_id").val(), function(data) {
+            $.getJSON("/gps/{{ session_key }}/{{ exec_id }}", function(data) {
                 run_coords = new Array()
-                for (var i = 0; i < data.length; i++) {
+
+                var max_speed = 0;
+                var min_speed = null;
+                for (var i = 0; i < data.length - 1; i++) {
+                    var avg_speed = (data[i].speed + data[i + 1].speed) / 2;
+
+                    if (avg_speed > max_speed) {
+                        max_speed = avg_speed;
+                    }
+
+                    if (min_speed == null || avg_speed < min_speed) {
+                        min_speed = avg_speed;
+                    }
+                }
+
+                for (var i = 0; i < data.length - 1; i++) {
                     run_coords.push(
                         new google.maps.LatLng(data[i].latitude, data[i].longitude)
                     );
 
+                    delta_speed = (data[i + 1].speed + data[i].speed) / 2 + 5;
+
+                    var run_path = new google.maps.Polyline({
+                        path: [
+                            new google.maps.LatLng(data[i].latitude, data[i].longitude),
+                            new google.maps.LatLng(data[i + 1].latitude, data[i + 1].longitude)
+                        ],
+                        geodesic: true,
+                        strokeColor: rgbToHex(
+                            219 * delta_speed / (max_speed - min_speed),
+                            50 * delta_speed / (max_speed - min_speed),
+                            0 * delta_speed / (max_speed - min_speed)
+                        ),
+                        strokeOpacity: 1.0,
+                        strokeWeight: 4
+                    });
+
+                    run_path.setMap(map);
+
                     bounds.extend(run_coords[i]);
                 }
 
-                var run_path = new google.maps.Polyline({
-                    path: run_coords,
-                    geodesic: true,
-                    strokeColor: '#FF0000',
-                    strokeOpacity: 1.0,
-                    strokeWeight: 4
-                });
-
                 map.fitBounds(bounds);
-                run_path.setMap(map);
-                $("#startModal").modal('hide');
-
             });
         }
 
-        google.maps.event.addDomListener(window, 'load', function () {
-            $("#startModal").modal("show");
-        });
+        google.maps.event.addDomListener(window, 'load', initialize);
 
     </script>
 </head>

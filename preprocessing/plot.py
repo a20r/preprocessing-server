@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import config
 import reqs
-from flask import jsonify, redirect, url_for
+from flask import jsonify, redirect, url_for, render_template
 import json
 
 
@@ -60,6 +60,13 @@ def get_plot(session_key, exec_id, sensor_type):
             return jsonify(error="Bad parameters dude")
 
 
+@config.app.route("/map/<session_key>/<exec_id>", methods=["GET"])
+def get_mapping(session_key, exec_id):
+    return render_template("mapping.html",
+                           session_key=session_key,
+                           exec_id=exec_id)
+
+
 @config.app.route("/gps/<session_key>/<exec_id>", methods=["GET"])
 def get_gps(session_key, exec_id):
     s_data = reqs.get_sensor_data(session_key, exec_id)
@@ -69,5 +76,7 @@ def get_gps(session_key, exec_id):
             gps_dict = dict()
             gps_dict["latitude"] = s_event["data"]["latitude"]
             gps_dict["longitude"] = s_event["data"]["longitude"]
+            gps_dict["altitude"] = s_event["data"]["altitude"]
+            gps_dict["speed"] = s_event["data"]["speed"]
             gps_list.append(gps_dict)
     return json.dumps(gps_list)
